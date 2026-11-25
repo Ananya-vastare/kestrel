@@ -177,6 +177,9 @@ http://localhost:8080
 - Indexing and performance benchmarking.
 - More comprehensive error handling and test coverage.
 
+## BENCHMARK
+<img width="537" height="833" alt="Screenshot 2026-11-25 184739" src="https://github.com/user-attachments/assets/9283431b-c0e7-4c66-9f19-9ddc035e77c2" />
+
 ## Author
 
 **Ananya Ravikiran Vastare**
