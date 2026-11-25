@@ -1,0 +1,552 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#090b1a">
+  <title>PythonSQL Studio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #090b1a;
+      --panel: rgba(17, 22, 46, .76);
+      --line: rgba(157, 169, 255, .16);
+      --text: #f4f2ff;
+      --muted: #9da4c5;
+      --blue: #70a7ff;
+      --pink: #f18bdf;
+      --danger: #ff8fa9;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse at 15% 8%, rgba(69, 93, 220, .16), transparent 38%),
+        radial-gradient(ellipse at 88% 24%, rgba(218, 81, 194, .13), transparent 35%),
+        var(--bg);
+      font-family: "Inter", sans-serif;
+      position: relative;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      z-index: -1;
+      width: 52vw;
+      height: 52vw;
+      min-width: 420px;
+      min-height: 420px;
+      border-radius: 50%;
+      filter: blur(95px);
+      opacity: .23;
+      pointer-events: none;
+      animation: auroraDrift 19s ease-in-out infinite alternate;
+    }
+
+    body::before {
+      top: -24%;
+      left: -15%;
+      background: radial-gradient(circle, #356cff 0%, #6552d9 38%, transparent 70%);
+    }
+
+    body::after {
+      right: -18%;
+      bottom: -30%;
+      background: radial-gradient(circle, #ec69ce 0%, #7755df 38%, transparent 70%);
+      animation-duration: 23s;
+      animation-direction: alternate-reverse;
+    }
+
+    @keyframes auroraDrift {
+      0% {
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+      50% {
+        transform: translate3d(9vw, 7vh, 0) scale(1.13);
+      }
+      100% {
+        transform: translate3d(-4vw, 13vh, 0) scale(.94);
+      }
+    }
+
+    .ambient {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      opacity: .16;
+      background-image:
+        linear-gradient(rgba(160, 170, 255, .055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(160, 170, 255, .055) 1px, transparent 1px);
+      background-size: 58px 58px;
+      mask-image: linear-gradient(to bottom, black, transparent 82%);
+    }
+
+    main {
+      width: min(1120px, calc(100% - 40px));
+      margin: 75px auto 70px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #b8baff;
+      text-transform: uppercase;
+      letter-spacing: 2.5px;
+      font-size: 10px;
+      font-weight: 700;
+      margin-bottom: 15px;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 22px;
+      height: 1px;
+      background: linear-gradient(90deg, var(--blue), var(--pink));
+      box-shadow: 0 0 10px var(--blue);
+    }
+
+    .heading {
+      margin-bottom: 30px;
+    }
+
+    .heading h2 {
+      font-size: clamp(34px, 5vw, 53px);
+      line-height: 1.06;
+      letter-spacing: -2.4px;
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+
+    .gradient-text {
+      background: linear-gradient(100deg, #91baff 10%, #c0a4ff 48%, #f5a0df 90%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .heading p {
+      max-width: 620px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .workspace,
+    .results {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      overflow: hidden;
+      background: var(--panel);
+      backdrop-filter: blur(22px);
+      box-shadow:
+        0 20px 70px rgba(0, 0, 0, .25),
+        0 0 36px rgba(106, 119, 255, .055);
+    }
+
+    .toolbar,
+    .result-header {
+      min-height: 59px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 15px 21px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,.018);
+    }
+
+    .toolbar h3,
+    .result-header h3 {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.7px;
+      color: #e4e5ff;
+    }
+
+    .editor-tag {
+      font-family: "JetBrains Mono", monospace;
+      color: #b7baff;
+      border: 1px solid rgba(157, 169, 255, .22);
+      border-radius: 7px;
+      padding: 5px 9px;
+      font-size: 10px;
+      background: rgba(114, 126, 255, .08);
+    }
+
+    .editor {
+      padding: 20px;
+    }
+
+    .editor-topline {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: #858eaf;
+      font-size: 11px;
+      margin: 0 2px 10px;
+    }
+
+    textarea {
+      display: block;
+      width: 100%;
+      min-height: 250px;
+      resize: vertical;
+      outline: none;
+      border: 1px solid rgba(139, 155, 255, .2);
+      border-radius: 13px;
+      padding: 20px;
+      color: #d9d8ff;
+      caret-color: var(--pink);
+      background: rgba(5, 8, 23, .84);
+      font: 13px/1.9 "JetBrains Mono", monospace;
+      tab-size: 2;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    textarea::placeholder {
+      color: #5f688d;
+    }
+
+    textarea:focus {
+      border-color: rgba(142, 153, 255, .72);
+      box-shadow:
+        0 0 0 3px rgba(119, 128, 255, .1),
+        0 0 28px rgba(103, 130, 255, .1);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 11px;
+      margin-top: 16px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 11px 17px;
+      cursor: pointer;
+      font: 600 12px "Inter", sans-serif;
+      transition:
+        transform .2s,
+        box-shadow .2s,
+        border-color .2s,
+        background .2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+    }
+
+    button:disabled {
+      opacity: .6;
+      cursor: wait;
+      transform: none;
+    }
+
+    .run {
+      color: #090b1a;
+      background: linear-gradient(105deg, #9cc5ff, #d3aaff 55%, #f4a1df);
+      box-shadow: 0 5px 24px rgba(153, 139, 255, .22);
+    }
+
+    .run:hover {
+      box-shadow: 0 8px 30px rgba(196, 133, 255, .36);
+    }
+
+    .clear {
+      color: #c4c8e7;
+      border: 1px solid rgba(157, 169, 255, .2);
+      background: rgba(255,255,255,.045);
+    }
+
+    .clear:hover {
+      border-color: rgba(239, 150, 225, .5);
+    }
+
+    .shortcut {
+      margin-left: auto;
+      color: #7881a5;
+      font-size: 10px;
+    }
+
+    kbd {
+      font: 10px "JetBrains Mono", monospace;
+      padding: 4px 6px;
+      border: 1px solid rgba(157, 169, 255, .2);
+      border-radius: 5px;
+      color: #b6bce0;
+      background: rgba(255,255,255,.04);
+    }
+
+    .examples {
+      margin: 27px 0;
+    }
+
+    .examples h3 {
+      color: #dfe0fa;
+      font-size: 12px;
+      margin-bottom: 13px;
+    }
+
+    .example-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
+    .example-buttons button {
+      color: #c0c3e2;
+      font-size: 10px;
+      letter-spacing: .5px;
+      padding: 9px 12px;
+      border: 1px solid rgba(157, 169, 255, .17);
+      background: rgba(19, 24, 52, .65);
+    }
+
+    .example-buttons button:hover {
+      color: #fff;
+      border-color: rgba(204, 151, 255, .6);
+      box-shadow: 0 0 18px rgba(160, 119, 255, .12);
+    }
+
+    .results {
+      margin-top: 25px;
+    }
+
+    #executionTime {
+      color: #929abd;
+      font: 10px "JetBrains Mono", monospace;
+    }
+
+    #output {
+      min-height: 145px;
+      padding: 21px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      color: #cbd3f5;
+      font: 12px/1.85 "JetBrains Mono", monospace;
+    }
+
+    #output.error {
+      color: var(--danger) !important;
+    }
+
+    @media (max-width: 640px) {
+      main {
+        width: min(100% - 28px, 1120px);
+        margin: 42px auto 55px;
+      }
+
+      .heading h2 {
+        letter-spacing: -1.5px;
+      }
+
+      .toolbar,
+      .result-header {
+        padding: 14px 16px;
+      }
+
+      .editor {
+        padding: 14px;
+      }
+
+      textarea {
+        min-height: 220px;
+        padding: 15px;
+        font-size: 12px;
+      }
+
+      .shortcut {
+        display: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="ambient"></div>
+
+  <main>
+    <section class="heading">
+        <h1>KestrelSQL</h1>
+      <h2>
+        Query. Execute.
+        <span class="gradient-text">Explore.</span>
+      </h2>
+
+      <p>
+        Write SQL commands, run them against your PythonSQL engine,
+        and see the output instantly. Your database playground,
+        wrapped in a little glow.
+      </p>
+    </section>
+
+    <section class="workspace">
+      <div class="toolbar">
+        <h3>QUERY EDITOR</h3>
+        <span class="editor-tag">SQL / PYTHONSQL</span>
+      </div>
+
+      <div class="editor">
+        <div class="editor-topline">
+          <span>Write your command below</span>
+          <span>Ctrl + Enter to run</span>
+        </div>
+
+        <textarea
+          id="query"
+          spellcheck="false"
+          autocomplete="off"
+          autocapitalize="off"
+          placeholder="-- Start with a query&#10;CREATE TABLE students (id INTEGER, name TEXT);&#10;INSERT INTO students VALUES (1, 'Ananya');&#10;SELECT * FROM students;"
+        ></textarea>
+
+        <div class="actions">
+          <button class="run" id="runButton" onclick="runQuery()">
+            ▶ &nbsp; Run Query
+          </button>
+
+          <button class="clear" onclick="clearEditor()">
+            Clear editor
+          </button>
+
+          <span class="shortcut">
+            <kbd>CTRL</kbd> + <kbd>ENTER</kbd> &nbsp; to execute
+          </span>
+        </div>
+      </div>
+    </section>
+
+
+
+    <section class="results">
+      <div class="result-header">
+        <h3>QUERY OUTPUT</h3>
+        <span id="executionTime">Waiting for query...</span>
+      </div>
+
+      <pre id="output">Your results will appear here. Run a query to get started.</pre>
+    </section>
+  </main>
+
+  <script>
+    const queryEditor = document.getElementById("query");
+    const output = document.getElementById("output");
+    const executionTime = document.getElementById("executionTime");
+    const runButton = document.getElementById("runButton");
+
+    async function runQuery() {
+      const query = queryEditor.value.trim();
+
+      if (!query) {
+        output.textContent = "Please enter a SQL query first.";
+        output.className = "error";
+        return;
+      }
+
+      runButton.disabled = true;
+      runButton.textContent = "Executing...";
+
+      output.className = "";
+      output.textContent = "Running your query...";
+
+      const start = performance.now();
+
+      try {
+        const response = await fetch("/api/query", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ query })
+        });
+
+        const data = await response.json();
+        const end = performance.now();
+
+        executionTime.textContent =
+          `Request time: ${(end - start).toFixed(2)} ms`;
+
+        if (data.success) {
+          output.textContent =
+            data.result || "Query executed successfully.";
+        } else {
+          output.textContent = data.error || "Query failed.";
+          output.className = "error";
+        }
+
+      } catch (error) {
+        output.textContent =
+          "Unable to connect to the PythonSQL server. Make sure Flask is running.";
+
+        output.className = "error";
+        executionTime.textContent = "Request failed";
+
+      } finally {
+        runButton.disabled = false;
+        runButton.textContent = "▶  Run Query";
+      }
+    }
+
+    function loadQuery(query) {
+      queryEditor.value = query;
+      queryEditor.focus();
+    }
+
+    function clearEditor() {
+      queryEditor.value = "";
+
+      output.textContent =
+        "Your results will appear here. Run a query to get started.";
+
+      output.className = "";
+      executionTime.textContent = "Waiting for query...";
+
+      queryEditor.focus();
+    }
+
+    queryEditor.addEventListener("keydown", function(event) {
+      if (event.ctrlKey && event.key === "Enter") {
+        event.preventDefault();
+        runQuery();
+      }
+
+      if (event.key === "Tab") {
+        event.preventDefault();
+
+        const start = queryEditor.selectionStart;
+        const end = queryEditor.selectionEnd;
+
+        queryEditor.setRangeText("  ", start, end, "end");
+      }
+    });
+  </script>
+</body>
+</html>
